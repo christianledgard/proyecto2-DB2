@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="flex-shrink-0">
+    <div class="container">
+        <h1 class="mt-5">Buscador</h1>
+        <p class="lead">Ingrese su búsqueda a continuación: </p>
+
+        <form action="{{ url_for('search') }}" method="post">
+        <div class="mb-3">
+            <input type="text" class="form-control" id="searchString" name="searchString">
+            <div id="stringHelp" class="form-text">Ingrese su búsqueda a continuación.</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+        
+    </div>
+</main>
+{% endblock %}
