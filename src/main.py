@@ -106,6 +106,7 @@ class Index:
 
 
     def merge_blocks(self, directory):
+        
         pass #total_merge_blocks = len(os.listdir(directory)) // 2
 
     def get_file_attributes_for_merge(self, file_name):
@@ -116,22 +117,35 @@ class Index:
         file.close()
         return file_dict, file_keys, file_size
 
-    def merge_blocks_2(self, file1, file2, file_destination):
+    def merge_blocks_2(self, file1, file2, file_destination1, file_destination2):
         # "2019": [3, [[1026857085907226626, 1], [1027004287715553280, 1], [1027005991429332993, 1]]]
         file1_dict, file1_keys, file1_size = self.get_file_attributes_for_merge(file1)
         file2_dict, file2_keys, file2_size = self.get_file_attributes_for_merge(file2)
+        total_docs = sum(values[0] for key, values in file1_dict.items())
+        total_docs += sum(values[0] for key, values in file2_dict.items())
+        threshold = total_docs // 2
         i = j = 0
+        contador = 0
+        file_destination1_written = False
         merged_dict = dict()
         while i < file1_size and j < file2_size:
+            if not file_destination1_written and contador > threshold:
+                contador = 0
+                file_destination1_written = True
+                self.exportar_index(merged_dict, file_destination1)
+                merged_dict = dict()
             word_file1 = file1_keys[i]
             word_file2 = file2_keys[j]
             if word_file1 < word_file2:
+                contador += file1_dict[word_file1][0]
                 merged_dict[word_file1] = file1_dict[word_file1]
                 i += 1
             elif word_file1 > word_file2:
+                contador += file2_dict[word_file2][0]
                 merged_dict[word_file2] = file2_dict[word_file2]
                 j += 1
             else:
+                contador += file2_dict[word_file2][0] + file1_dict[word_file1][0]
                 word1_list = file1_dict[file1_keys[i]]
                 word2_list = file2_dict[file2_keys[j]]
                 merged_words = list()
@@ -141,14 +155,28 @@ class Index:
                 i, j = i + 1, j + 1
 
         while i < file1_size:
+            if file_destination1_written and contador > threshold:
+                contador = 0
+                file_destination1_written = True
+                self.exportar_index(merged_dict, file_destination1)
+                merged_dict = dict()
+            contador += file1_dict[word_file1][0]
             merged_dict[file1_keys[i]] = file1_dict[file1_keys[i]]
             i += 1
         
         while j < file2_size:
+            if file_destination1_written and contador > threshold:
+                contador = 0
+                file_destination1_written = True
+                self.exportar_index(merged_dict, file_destination1)
+                merged_dict = dict()
+            contador += file2_dict[word_file2][0]
             merged_dict[file2_keys[j]] = file2_dict[file2_keys[j]]
             j += 1
 
-        self.exportar_index(merged_dict, file_destination)
+        print(total_docs)
+        
+        self.exportar_index(merged_dict, file_destination2)
 
 
     def get_total_documents(self):
@@ -159,7 +187,7 @@ a = Index()
 
 #a.bsb_index_construction("clean", "index")
 #print(a.get_total_documents())
-a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json")
+a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
 
 # hallar document frequency (# de documentos que contienen a t). trivial, tamaño de índice invertido sobre un término
 # 
