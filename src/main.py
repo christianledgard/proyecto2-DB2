@@ -61,8 +61,7 @@ class Index:
                     frecuencia_palabras[item][0] += 1
                 else:
                     frecuencia_palabras[item] = [1]
-
-        return dict(sorted(frecuencia_palabras.items(), key=itemgetter(1), reverse=True))
+        return frecuencia_palabras
 
     def hallar_coincidencia_de_la_palabra_en_todos_los_tweets(self, palabra, id, index_list):
         if (len(index_list[palabra]) == 1): index_list[palabra].append([])
@@ -261,10 +260,9 @@ class Index:
                         current_index_file[to_update[0]] = to_update[1]
                         # actualizar current_block
                         self.update_block(to_insert_to_block, current_block)
-                        total_block_documents += current_term[1][0]
                     else:
                         self.update_block(current_term, current_block)
-                        total_block_documents += current_term[1][0]
+                    total_block_documents += current_term[1][0]
                     if len(current_index_file) == 0:
                         current_index_file = dict(json.load(open(index_directory + "/" + index_files.pop())))
             self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
