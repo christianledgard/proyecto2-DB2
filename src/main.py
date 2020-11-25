@@ -102,10 +102,11 @@ class Index:
             break
 
 
-    def merge_blocks_helper(self, block1, block2):
-        pass # comment explaining why this function is empty
-
-
+    def merge_all_blocks(self, merge_directory):
+        blocks = os.listdir(merge_directory)
+        total_iterations = len(blocks)
+        print(blocks)
+        print(total_iterations)
 
     def merge_blocks(self, directory):
         destination_path = directory + "primeraPasada"
@@ -275,7 +276,9 @@ a = Index()
 #print(a.get_total_documents())
 #a.merge_blocks("index/")
 #a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
-a.generate_index_blocks("inverted_index", 64, "merging_blocks")
+
+#a.generate_index_blocks("inverted_index", 64, "merging_blocks")
+a.merge_all_blocks("merging_blocks")
 
 # hallar document frequency (# de documentos que contienen a t). trivial, tamaño de índice invertido sobre un término
 # 
