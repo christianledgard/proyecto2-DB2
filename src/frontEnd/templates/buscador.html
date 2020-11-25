@@ -11,9 +11,19 @@
             <input type="text" class="form-control" id="searchString" name="searchString">
             <div id="stringHelp" class="form-text">Ingrese su búsqueda a continuación.</div>
         </div>
+        <div class="mb-3">
+            <div class="form-group">
+                <select class="form-control" id="numElement" name="numElement">
+                    <option>1</option>
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                </select>
+                <div id="stringHelp" class="form-text">Seleccione el número de respuestas.</div>
+            </div>
+        </div>
         <button type="submit" class="btn btn-primary">Buscar</button>
         </form>
-        
     </div>
 </main>
 {% endblock %}

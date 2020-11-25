@@ -106,10 +106,18 @@ class Index:
 
 
     def merge_blocks(self, directory):
-        
-        pass #total_merge_blocks = len(os.listdir(directory)) // 2
+        destination_path = directory + "primeraPasada"
 
-    def get_file_attributes_for_merge(self, file_name):
+        if not os.path.exists(destination_path):
+            os.makedirs(destination_path)
+    
+        files = sorted(os.listdir(directory))[1:]
+        for i in range(0, len(files), 2):
+            print(directory + files[i], " - ", directory + files[i+1])
+            self.merge_blocks_2(directory + files[i], directory + files[i+1], destination_path+"/"+str(i)+".json", destination_path+"/"+str(i+1)+".json")
+        
+
+    def get_file_metadata(self, file_name):
         file = open(file_name)
         file_dict = json.load(file)
         file_keys = list(file_dict.keys())
@@ -119,8 +127,8 @@ class Index:
 
     def merge_blocks_2(self, file1, file2, file_destination1, file_destination2):
         # "2019": [3, [[1026857085907226626, 1], [1027004287715553280, 1], [1027005991429332993, 1]]]
-        file1_dict, file1_keys, file1_size = self.get_file_attributes_for_merge(file1)
-        file2_dict, file2_keys, file2_size = self.get_file_attributes_for_merge(file2)
+        file1_dict, file1_keys, file1_size = self.get_file_metadata(file1)
+        file2_dict, file2_keys, file2_size = self.get_file_metadata(file2)
         total_docs = sum(values[0] for key, values in file1_dict.items())
         total_docs += sum(values[0] for key, values in file2_dict.items())
         threshold = total_docs // 2
@@ -163,7 +171,7 @@ class Index:
             contador += file1_dict[word_file1][0]
             merged_dict[file1_keys[i]] = file1_dict[file1_keys[i]]
             i += 1
-        
+
         while j < file2_size:
             if file_destination1_written and contador > threshold:
                 contador = 0
@@ -182,12 +190,20 @@ class Index:
     def get_total_documents(self):
         return self.total_documents
 
+    def generate_index_blocks(self, index_directory):
+        total_inverted_index_documents = 0
+        for index_file in os.listdir(index_directory):
+            if index_file != '.DS_Store':
+                index_file_dict = self.get_file_metadata(index_directory + "/" + index_file)[0]
+                total_inverted_index_documents += sum(values[0] for key, values in index_file_dict.items())
+
 
 a = Index()
 
 #a.bsb_index_construction("clean", "index")
 #print(a.get_total_documents())
-a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
-
+#a.merge_blocks("index/")
+#a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
+a.generate_index_blocks("index")
 # hallar document frequency (# de documentos que contienen a t). trivial, tamaño de índice invertido sobre un término
 # 

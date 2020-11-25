@@ -9,7 +9,9 @@ def home():
 @app.route('/search', methods=['POST', 'GET'])
 def search():
    projectpath = request.form.get('searchString')
-   print(projectpath)
+   numElement = request.form.get('numElement')
+   
+   print(projectpath, numElement)
 
    return render_template('buscador.html')
 
