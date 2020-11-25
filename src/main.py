@@ -12,7 +12,14 @@ nltk.download('stopwords')
 stemmer = SnowballStemmer('spanish')
 
 class Index:
-    total_documents = 0
+
+    def __init__(self, input_directory, index_directory, merge_directory, total_desired_blocks):
+        self.total_documents = 0
+        self.total_inverted_index_documents = 0
+        self.inverted_index_documents_per_block = 0
+
+        self.bsb_index_construction(input_directory, index_directory)
+        self.generate_index_blocks(index_directory, 64, merge_directory)
 
     def pre_procesamiento(self, texto):
         """
@@ -41,7 +48,6 @@ class Index:
 
         return tokens_stremed
 
-
     def dic_palabras_con_terminos_mas_frecuentes(self, lista):
         """
         calcular document frequency
@@ -58,7 +64,6 @@ class Index:
 
         return dict(sorted(frecuencia_palabras.items(), key=itemgetter(1), reverse=True))
 
-
     def hallar_coincidencia_de_la_palabra_en_todos_los_tweets(self, palabra, id, index_list):
         if (len(index_list[palabra]) == 1): index_list[palabra].append([])
         encontrado = False
@@ -69,13 +74,11 @@ class Index:
         if not encontrado:
             index_list[palabra][1].append([id,1])
 
-
     def generar_index(self, grupos_de_palabras_con_id, index_list):
         for id in grupos_de_palabras_con_id:
             for palabra in grupos_de_palabras_con_id[id]:
                 self.hallar_coincidencia_de_la_palabra_en_todos_los_tweets(palabra, id, index_list)
         return dict(sorted(index_list.items()))
-
 
     def exportar_index(self, index, file_name):
         with open(file_name, 'w') as file:
@@ -94,19 +97,39 @@ class Index:
                 grupos_de_palabras.append(pre_procesado)
         return self.generar_index(grupos_de_palabras_con_id, self.dic_palabras_con_terminos_mas_frecuentes(grupos_de_palabras))
 
-
     def bsb_index_construction(self, input_directory, output_directory):
         for block in os.listdir(input_directory):
             index = self.procesar_index(input_directory + "/" + block)
             self.exportar_index(index, output_directory + "/index-" + block)
-            break
-
 
     def merge_all_blocks(self, merge_directory):
-        blocks = os.listdir(merge_directory)
-        total_iterations = len(blocks)
-        print(blocks)
-        print(total_iterations)
+        blocks_names = (list(os.listdir(merge_directory)))
+        if blocks_names.count('.DS_Store'):
+            blocks_names.remove('.DS_Store')
+        blocks_names = sorted(blocks_names, key=sort_file_names)
+        output_file_names = copy.deepcopy(list(blocks_names))
+        total_iterations = int(math.log2(len(blocks_names)))
+        
+        total_blocks_to_compare = 1
+        for i in range(total_iterations):
+            blocks_names_copy = copy.deepcopy(list(blocks_names))
+            while len(blocks_names_copy) > 0:
+                # get input blocks names
+                input_blocks1 = copy.deepcopy(list(blocks_names_copy[:total_blocks_to_compare]))
+                del blocks_names_copy[:total_blocks_to_compare]
+                input_blocks2 = copy.deepcopy(list(blocks_names_copy[:total_blocks_to_compare]))
+                del blocks_names_copy[:total_blocks_to_compare]
+                # declare output block
+                output = dict()
+                current_block_size = 0
+                while len(input_blocks1) > 0 and len(input_blocks2) > 0:
+                    # load input blocks
+                    input1 = dict(json.load(open(input_blocks1.pop(0))))
+                    input2 = dict(json.load(open(input_blocks2.pop(0))))
+                    while current_block_size < self.inverted_index_documents_per_block:
+                        term1 = copy.deepcopy(list(input1.popitem()))
+
+            total_blocks_to_compare *= 2
 
     def merge_blocks(self, directory):
         destination_path = directory + "primeraPasada"
@@ -119,7 +142,6 @@ class Index:
             print(directory + files[i], " - ", directory + files[i+1])
             self.merge_blocks_2(directory + files[i], directory + files[i+1], destination_path+"/"+str(i)+".json", destination_path+"/"+str(i+1)+".json")
         
-
     def get_file_metadata(self, file_name):
         file = open(file_name)
         file_dict = json.load(file)
@@ -189,42 +211,45 @@ class Index:
         
         self.exportar_index(merged_dict, file_destination2)
 
-
     def get_total_documents(self):
         return self.total_documents
+
+    def update_block(self, term, block):
+        if term[0] not in block:
+            block[term[0]] = term[1]
+        else:
+            term_to_update = copy.deepcopy(block[term[0]])
+            term_to_update[0] += term[1][0]
+            for doc in block[term[0]][1]:
+                term_to_update[1].append(doc)
+            block[term[0]] = term_to_update
 
     def generate_index_blocks(self, index_directory, total_desired_blocks, merge_directory):
         if not is_power(total_desired_blocks, 2):
             raise Exception("Sorry, not a valid number of blocks")
-        total_inverted_index_documents = 0
-        for index_file in os.listdir(index_directory):
-            if index_file != '.DS_Store':
-                index_file_dict = self.get_file_metadata(index_directory + "/" + index_file)[0]
-                total_inverted_index_documents += sum(values[0] for key, values in index_file_dict.items())
-        
-        inverted_index_documents_per_block = total_inverted_index_documents // total_desired_blocks
-        current_block = dict()
+        self.total_inverted_index_documents = 0
         index_files = list(os.listdir(index_directory))
+        if index_files.count('.DS_Store'):
+            index_files.remove('.DS_Store')
+        for index_file in index_files:
+            index_file_dict = self.get_file_metadata(index_directory + "/" + index_file)[0]
+            self.total_inverted_index_documents += sum(values[0] for key, values in index_file_dict.items())
+        
+        self.inverted_index_documents_per_block = self.total_inverted_index_documents // total_desired_blocks
+        current_block = dict()
         current_index_file = dict(json.load(open(index_directory + "/" + index_files.pop())))
 
         for i in range(total_desired_blocks):
             if i == total_desired_blocks - 1:
                 while len(current_index_file) > 0:
                     current_term = current_index_file.popitem()
-                    if current_term[0] not in current_block:
-                        current_block[current_term[0]] = current_term[1]
-                    else:
-                        term_to_update = current_block[current_term[0]]
-                        term_to_update[0] += current_term[1][0]
-                        for doc in term_to_update[1]:
-                            term_to_update[1].append(doc)
-                        current_block[current_term[0]] = term_to_update
+                    self.update_block(current_term, current_block)
             else:
                 total_block_documents = 0
-                while total_block_documents < inverted_index_documents_per_block:
+                while total_block_documents < self.inverted_index_documents_per_block:
                     current_term = copy.deepcopy(list(current_index_file.popitem()))
-                    if current_term[1][0] + total_block_documents > inverted_index_documents_per_block:
-                        available_spots = inverted_index_documents_per_block - total_block_documents
+                    if current_term[1][0] + total_block_documents > self.inverted_index_documents_per_block:
+                        available_spots = self.inverted_index_documents_per_block - total_block_documents
                         # crear un nuevo elemento solo con los terminos que entran
                         to_insert_to_block = copy.deepcopy(list(current_term))
                         to_insert_to_block[1][0] = available_spots
@@ -235,31 +260,16 @@ class Index:
                         to_update[1][1] = current_term[1][1][available_spots:]
                         current_index_file[to_update[0]] = to_update[1]
                         # actualizar current_block
-                        if to_insert_to_block[0] not in current_block:
-                            current_block[to_insert_to_block[0]] = to_insert_to_block[1]
-                        else:
-                            term_to_update = current_block[to_insert_to_block[0]]
-                            term_to_update[0] += to_insert_to_block[1][0]
-                            for doc in term_to_update[1]:
-                                term_to_update[1].append(doc)
-                            current_block[to_insert_to_block[0]] = term_to_update   
+                        self.update_block(to_insert_to_block, current_block)
                         total_block_documents += current_term[1][0]
                     else:
-                        if current_term[0] not in current_block:
-                            current_block[current_term[0]] = current_term[1]
-                        else:
-                            term_to_update = copy.deepcopy(current_block[current_term[0]])
-                            term_to_update[0] += current_term[1][0]
-                            for doc in current_block[current_term[0]][1]:
-                                term_to_update[1].append(doc)
-                            current_block[current_term[0]] = term_to_update
+                        self.update_block(current_term, current_block)
                         total_block_documents += current_term[1][0]
                     if len(current_index_file) == 0:
                         current_index_file = dict(json.load(open(index_directory + "/" + index_files.pop())))
-            self.exportar_index(current_block, merge_directory + "/" + str(i) + '.json')
+            self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
             current_block = dict()
         print(len(index_files))
-
 
 
 def is_power (num, base):
@@ -270,15 +280,18 @@ def is_power (num, base):
         testnum = testnum * base
     return testnum == num
 
-a = Index()
+def sort_file_names(file_name):
+    s = file_name.split('.')
+    return int(s[0])
+
+a = Index("clean", "inverted_index", "merging_blocks", 64)
 
 #a.bsb_index_construction("clean", "index")
-#print(a.get_total_documents())
 #a.merge_blocks("index/")
 #a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
 
 #a.generate_index_blocks("inverted_index", 64, "merging_blocks")
-a.merge_all_blocks("merging_blocks")
+#a.merge_all_blocks("merging_blocks")
 
 # hallar document frequency (# de documentos que contienen a t). trivial, tamaño de índice invertido sobre un término
 # 
