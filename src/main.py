@@ -199,7 +199,7 @@ class Index:
         for index_file in os.listdir(index_directory):
             if index_file != '.DS_Store':
                 index_file_dict = self.get_file_metadata(index_directory + "/" + index_file)[0]
-                total_inverted_index_documents = sum(values[0] for key, values in index_file_dict.items())
+                total_inverted_index_documents += sum(values[0] for key, values in index_file_dict.items())
         
         inverted_index_documents_per_block = total_inverted_index_documents // total_desired_blocks
         current_block = dict()
