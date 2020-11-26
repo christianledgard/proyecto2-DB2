@@ -161,19 +161,23 @@ class Index:
                 while True:
                     #term1 = pop_first_item_from_dict(input1)
                     #term2 = pop_first_item_from_dict(input2)
-                    term1 = input1.pop(0)
-                    term2 = input2.pop(0)
+                    term1 = input1[0]
+                    term2 = input2[0]
 
                     if term1[0] < term2[0]:
                         current_block_size += term1[1][0]
                         self.update_block(term1, output)
+                        input1.pop(0)
                     elif term1[0] > term2[0]:
                         current_block_size += term2[1][0]
                         self.update_block(term2, output)
+                        input2.pop(0)
                     else:
                         current_block_size += (term1[1][0] + term2[1][0])
                         self.update_block(term1, output)
                         self.update_block(term2, output)
+                        input1.pop(0)
+                        input2.pop(0)
 
                     last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (total_blocks_to_compare * 2) == 0
 
@@ -217,7 +221,7 @@ class Index:
 
     def update_block_with_remaining_inputs(self, input_blocks, current_input, current_block_size, output, directory, file_name_counter, total_blocks_to_compare):
         while len(input_blocks) > 0 or len(current_input) > 0:
-            term = pop_first_item_from_dict(current_input)
+            term = current_input.pop(0) #Cambie de pop_first_item_from_dict a
             self.update_block(term, output)
             current_block_size += term[1][0]
             last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (total_blocks_to_compare * 2) == 0
