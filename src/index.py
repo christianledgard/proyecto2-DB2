@@ -150,17 +150,19 @@ class Index:
                 output = dict()
                 current_block_size = 0
                 # declare input blocks
-                input1 = dict(json.load(open(input_directory + '/' + input_blocks1.pop(0))))
-                input2 = dict(json.load(open(input_directory + '/' + input_blocks2.pop(0))))
+                input1 = list(dict(json.load(open(input_directory + '/' + input_blocks1.pop(0)))).items())
+                input2 = list(dict(json.load(open(input_directory + '/' + input_blocks2.pop(0)))).items())
 
                 self.file_name_counter = 0
 
-                input1_sum = sum(values[0] for key, values in input1.items())
-                input2_sum = sum(values[0] for key, values in input2.items())
+                #input1_sum = sum(values[0] for key, values in input1.items())
+                #input2_sum = sum(values[0] for key, values in input2.items())
                 
                 while True:
-                    term1 = pop_first_item_from_dict(input1)
-                    term2 = pop_first_item_from_dict(input2)
+                    #term1 = pop_first_item_from_dict(input1)
+                    #term2 = pop_first_item_from_dict(input2)
+                    term1 = input1.pop(0)
+                    term2 = input2.pop(0)
 
                     if term1[0] < term2[0]:
                         current_block_size += term1[1][0]
