@@ -1,3 +1,11 @@
+# 1) merge
+# 2) hallar la norma no sé cómo
+# 3) weight tf-idf normalizado
+# 4) consulta
+#   4a) cargar índice
+#   4b) hacer consulta
+#   4c) mostrar resultados
+
 import nltk
 from operator import itemgetter
 from nltk.stem import SnowballStemmer
@@ -133,7 +141,6 @@ class Index:
                     input2 = dict(json.load(open(input_blocks2.pop(0))))
                     while current_block_size < self.inverted_index_documents_per_block:
                         term1 = copy.deepcopy(list(input1.popitem()))
-
             total_blocks_to_compare *= 2
 
     def merge_blocks(self, directory):
