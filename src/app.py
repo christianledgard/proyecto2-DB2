@@ -4,7 +4,10 @@ import importlib
 import sys
 import os 
 
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append("../merging_blocks/0.json")
+import index
+
 
 app = Flask(__name__)
 
@@ -19,12 +22,11 @@ def consulta():
    message = json.loads(request.data)
    print(message)
    words =  message['values']
-   cantidad =message['cantidad']
-   #data = search(words,cantidad)
-   #test()
+   cantidad = message['cantidad']
+   data = Query.search(words,cantidad)
    print(words)
    print(cantidad)
-   return Response("Working",status=200, mimetype='application/json')
+   return Response("Working", status=200, mimetype='application/json')
 
 @app.route('/upload', methods = ['POST'])
 def upload():
@@ -32,14 +34,7 @@ def upload():
    #print(file.read())
    return render_template('buscador.html')
 
-# @app.route('/search', methods=['POST', 'GET'])
-# def search():
-#    #stringBusqueda = request.form.get('searchString')
-#    #numElement = request.form.get('numElement')
-   
-#    #print(stringBusqueda, numElement)
 
-#    return render_template('buscador.html')
 
 
 if __name__ == '__main__':

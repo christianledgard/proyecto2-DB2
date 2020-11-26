@@ -162,14 +162,14 @@ class Index:
                     term1 = pop_first_item_from_dict(input1)
                     term2 = pop_first_item_from_dict(input2)
 
-                    if term1 < term2:
+                    if term1[0] < term2[0]:
                         current_block_size += term1[1][0]
                         self.update_block(term1, output)
-                    elif term1 > term2:
+                    elif term1[0] > term2[0]:
                         current_block_size += term2[1][0]
                         self.update_block(term2, output)
                     else:
-                        current_block_size += term1[1][0] + term2[1][0]
+                        current_block_size += (term1[1][0] + term2[1][0])
                         self.update_block(term1, output)
                         self.update_block(term2, output)
 
@@ -177,7 +177,9 @@ class Index:
 
                     if not last_block and current_block_size >= self.inverted_index_documents_per_block:
                         self.write_index_and_update_file_counter(output, output_directory, self.file_name_counter)
+                        current_block_size = 0
 
+                    # check if an input is empty
                     if not self.check_and_update_inputs(input1, input_blocks1) or not self.check_and_update_inputs(input2, input_blocks2):
                         output_sum = sum(values[0] for key, values in output.items())
                         p = 0
@@ -284,10 +286,13 @@ class Index:
             self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
             current_block = dict()
 
+class Query:
+    def search(words,N):
+        print("Test")
 
 def is_power (num, base):
     if base in {0, 1}:
-            return num == base
+        return num == base
     testnum = base
     while testnum < num:
         testnum = testnum * base
@@ -298,15 +303,14 @@ def sort_file_names(file_name):
     return int(s[0])
 
 def pop_first_item_from_dict(dictionary):
-    term = copy.deepcopy(list(dictionary.items())[0])
+    term = copy.deepcopy(list(list(dictionary.items())[0]))
     del dictionary[term[0]]
     return term
 
 a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
 
 
-def test():
-    print("hola")
+
 
 #a.bsb_index_construction("clean", "index")
 #a.merge_blocks("index/")
