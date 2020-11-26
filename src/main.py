@@ -14,12 +14,17 @@ stemmer = SnowballStemmer('spanish')
 class Index:
 
     def __init__(self, input_directory, index_directory, merge_directory, total_desired_blocks):
+        self.input_directory = input_directory
+        self.index_directory = index_directory
+        self.merge_directory = merge_directory
+        self.total_desired_blocks = total_desired_blocks
+
         self.total_documents = 0
         self.total_inverted_index_documents = 0
         self.inverted_index_documents_per_block = 0
 
+        # bsb
         self.bsb_index_construction(input_directory, index_directory)
-        self.generate_index_blocks(index_directory, 64, merge_directory)
 
     def pre_procesamiento(self, texto):
         """
@@ -100,6 +105,7 @@ class Index:
         for block in os.listdir(input_directory):
             index = self.procesar_index(input_directory + "/" + block)
             self.exportar_index(index, output_directory + "/index-" + block)
+        self.generate_index_blocks(self.index_directory, self.total_desired_blocks, self.merge_directory)
 
     def merge_all_blocks(self, merge_directory):
         blocks_names = (list(os.listdir(merge_directory)))
