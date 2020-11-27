@@ -1,5 +1,3 @@
-# 2) hallar la norma no sé cómo
-# 3) weight tf-idf normalizado
 # 4) consulta
 #   4a) cargar índice
 #   4b) hacer consulta
@@ -13,6 +11,7 @@ import json
 import math
 import os
 import copy
+from cleanFilesToDic import clean_input_files
 
 nltk.download('punkt')
 nltk.download('stopwords')
@@ -27,25 +26,109 @@ class Index:
         self.sorted_blocks_directory = sorted_blocks_directory
         self.total_desired_blocks = total_desired_blocks
 
-        self.total_documents = 0
-        self.total_inverted_index_documents = 1037642
-        self.inverted_index_documents_per_block = 16213
+        self.total_documents = 0 # 78127
+        self.total_inverted_index_documents = 0 # 1037642
+        self.inverted_index_documents_per_block = 0 # 16213
 
         self.file_name_counter = 0
         self.current_block_size = 0
         self.output = dict() # output block
 
-        # bsb
+        # bsbi
         self.bsb_index_construction(input_directory, index_directory)
 
         # export metadata
         self.export_metedata()
+
+        # hallar norma e tf-idf
+        self.calculate_tf_idf(self.sorted_blocks_directory) 
     
+    """
+    def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
+        #"hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
+        # tf-idf = log10(1 + tf) * log10(total_documents / df)
+        clean_input_files()
+        blocks_names = list(sorted(os.listdir(directory)))
+        if blocks_names.count('.DS_Store'):
+            blocks_names.remove('.DS_Store')
+        blocks_names = sorted(blocks_names, key=sort_file_names)
+        for block_name in blocks_names:
+            block = dict(json.load(open(directory + "/" + block_name)))
+            for key, value in block.items():
+                idf = math.log10(self.total_documents / int(value[0]))
+                for tweet in value[1]:
+                    tf = math.log10(1 + tweet[1])
+                    tf_idf = tf * idf
+                    if len(tweet) <= 2:
+                        tweet.append(tf_idf)
+                    else:
+                        tweet[2] = tf_idf
+                    
+                    documents_blocks_names = list(sorted(os.listdir(clean_directory)))
+                    if documents_blocks_names.count('.DS_Store'):
+                        documents_blocks_names.remove('.DS_Store')
+                    for documents_block_name in documents_blocks_names:
+                        document_block = dict(json.load(open(clean_directory + "/" + documents_block_name)))
+                        if str(tweet[0]) in document_block:
+                            if "squared_tf_idf" not in document_block[str(tweet[0])]:
+                                document_block[str(tweet[0])]["squared_tf_idf"] = math.pow(tf_idf, 2)
+                            else:
+                                document_block[str(tweet[0])]["squared_tf_idf"] += math.pow(tf_idf, 2)
+                            self.exportar_index(document_block, clean_directory + "/" + documents_block_name)
+                            break
+
+            self.exportar_index(block, directory + "/" + block_name)
+            """
+
+    # norma
+    def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
+        #"hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
+        # tf-idf = log10(1 + tf) * log10(total_documents / df)
+        clean_input_files()
+        blocks_names = list(sorted(os.listdir(directory)))
+        if blocks_names.count('.DS_Store'):
+            blocks_names.remove('.DS_Store')
+        blocks_names = sorted(blocks_names, key=sort_file_names)
+        documents_squared_tf_idf = dict()
+        for block_name in blocks_names:
+            block = dict(json.load(open(directory + "/" + block_name)))
+            for key, value in block.items():
+                idf = math.log10(self.total_documents / int(value[0]))
+                for tweet in value[1]:
+                    tf = math.log10(1 + tweet[1])
+                    tf_idf = tf * idf
+                    if len(tweet) <= 2:
+                        tweet.append(tf_idf)
+                    else:
+                        tweet[2] = tf_idf
+                    
+                    if str(tweet[0]) not in documents_squared_tf_idf:
+                        documents_squared_tf_idf[str(tweet[0])] = math.pow(tf_idf, 2)
+                    else:
+                        documents_squared_tf_idf[str(tweet[0])] += math.pow(tf_idf, 2)
+
+            self.exportar_index(block, directory + "/" + block_name)
+
+        for key, value in documents_squared_tf_idf.items():
+            documents_squared_tf_idf[key] = math.sqrt(value)
+        self.exportar_index(documents_squared_tf_idf, "documents_tf_idf_squared.json")
+
+    def calculate_sqrt_tf_idf(self, directory):
+        blocks_names = list(sorted(os.listdir(directory)))
+        if blocks_names.count('.DS_Store'):
+            blocks_names.remove('.DS_Store')
+        blocks_names = sorted(blocks_names, key=sort_file_names)
+        for block_name in blocks_names:
+            block = dict(json.load(open(directory + "/" + block_name)))
+            for key, value in block.items():
+                block[key]["tf_idf"] = math.sqrt(block[key]["squared_tf_idf"])
+            self.exportar_index(block, directory + "/" + block_name)
+
+
     def export_metedata(self):
         result = dict()
         result["totalDocuments"] = self.total_documents
         self.exportar_index(result, "metadata.json")
-
 
     def pre_procesamiento(self, texto):
         """
@@ -123,13 +206,23 @@ class Index:
         return self.generar_index(grupos_de_palabras_con_id, self.dic_palabras_con_terminos_mas_frecuentes(grupos_de_palabras))
 
     def bsb_index_construction(self, input_directory, output_directory):
-        """
-        for block in os.listdir(input_directory):
+        blocks_names = os.listdir(input_directory)
+        if blocks_names.count('.DS_Store'):
+            blocks_names.remove('.DS_Store')
+        for block in blocks_names:
             index = self.procesar_index(input_directory + "/" + block)
             self.exportar_index(index, output_directory + "/index-" + block)
+    
         self.generate_index_blocks(self.index_directory, self.total_desired_blocks, self.merge_directory)
-            """
         self.merge_all_blocks(self.merge_directory, self.sorted_blocks_directory)
+        
+    def get_file_metadata(self, file_name):
+        file = open(file_name)
+        file_dict = json.load(file)
+        file_keys = list(file_dict.keys())
+        file_size = len(file_keys)
+        file.close()
+        return file_dict, file_keys, file_size
 
     def merge_all_blocks(self, merge_directory, sorted_blocks_directory):
         blocks_names = (list(os.listdir(merge_directory)))
@@ -295,7 +388,7 @@ class Index:
             self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
             current_block = dict()
 
-class Query:
+# class Query:
     def search(words,K):
 
         ### n = leer n            
@@ -303,41 +396,59 @@ class Query:
 
         data=[]
         ids={}
+        # for word in data:
+        #     bs= binarySearch()
+        #     if()
+        #     for each word in block:
+        #         for each document in word:
+        #             if()
 
-
-def binarySearch(blocks, target):
-  min = 0
-  max = len(lst)-1
-  avg = (min+max)/2
-  # uncomment next line for traces
-  # print lst, target, avg  
-  while (min < max):
-    if (lst[avg] == target):
-      return avg
-    elif (lst[avg] < target):
-      return avg + 1 + search(lst[avg+1:], target)
-    else:
-      return search(lst[:avg], target)
-
-
-
-        for each block in blocks:
-            for each word in block:
-                for each document in word:
-                    if()
-
-        for word in words:
-            print("")
+        # for word in words:
+        #     print("")
 
         
 
-        for i in range(len(data)):
-            data[i][1]=data[i][1]/data[i][2]
+        # for i in range(len(data)):
+        #     data[i][1]=data[i][1]/data[i][2]
 
 
 
-        sorted(data, key=itemgetter(1))
+        # sorted(data, key=itemgetter(1))
         return data[0:K]
+
+
+
+# def binary_search(lista, e, n_iter):
+#       if len(lista) == 1:
+#     return lista[0] == e, n_iter+1
+
+#   middle = len(lista)//2
+#   if lista[middle] == e:
+#     return middle, n_iter+1
+#   elif e < lista[middle] :
+#     return binary_search(lista[:middle], e, n_iter+1)
+#   else:
+#     return binary_search(lista[middle:], e, n_iter+1)
+
+
+
+
+# def binarySearch(blocks, target):
+#   min = 0
+#   max = len(lst)-1
+#   avg = (min+max)/2
+#   # uncomment next line for traces
+#   # print lst, target, avg  
+#   while (min < max):
+#     if (lst[avg] == target):
+#       return avg
+#     elif (lst[avg] < target):
+#       return avg + 1 + search(lst[avg+1:], target)
+#     else:
+#       return search(lst[:avg], target)
+
+
+
 
 
 def is_power (num, base):
@@ -357,7 +468,7 @@ def pop_first_item_from_dict(dictionary):
     del dictionary[term[0]]
     return term
 
-a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
+a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 16)
 
 
 #a.bsb_index_construction("clean", "index")
