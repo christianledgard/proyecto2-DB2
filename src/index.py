@@ -449,4 +449,4 @@ def pre_procesamiento(texto):
 
 # descomentar esta línea para hallar el índice
 # a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
-Query().query("@juancarloszurek Anular papeles !! Q peligro Sr Zurek !! Cuidado con las combis asesinas libres !!", 10)
+#Query().query("@juancarloszurek Anular papeles !! Q peligro Sr Zurek !! Cuidado con las combis asesinas libres !!", 10)

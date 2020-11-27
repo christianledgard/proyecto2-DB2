@@ -10,10 +10,6 @@ Hoy en día las bases de datos son indispensables en nuestra sociedad. En ese co
 
 En este proyecto utilizaremos como dataset un conjunto de decenas de miles de Tweets, en los cuales se realizarán las búsquedas e inserciones. Consideramos que es una cantidad adecuada de tuplas para realizar todas nuestras pruebas, validaciones, test y experimentos. 
 
-### Resultados que se esperan obtener
-
-El resultado que se desea obtener es un motor de búsqueda para consultas textuales que funcione de forma óptima con una complejidad de tiempo de búsqueda **```O(1)```** y una complejidad de **```O(1)```** para las inserciones.
-
 ## Funcionamiento
 
 ### Preprocesamiento
@@ -38,9 +34,9 @@ A partir de los índices invertidos de tamaño similar y ordenados del paso ante
 
 Con todo esto, se da por terminada la construcción del índice invertido usando BSBI.
 
-Generar el índice invertido (antes del merge) toma O(nt), donde n es la cantidad de documentos totales y t es la cantidad de términos máxima en todos los documentos.
+Generar el índice invertido (antes del merge) toma **```O(n * t^2)```**, donde n es la cantidad de documentos totales y t es la cantidad de términos máxima en todos los documentos.
 
-Por otro lado, el merge toma O(p log(b)), donde p es la cantidad de palabras totales en el índice invertido y b es la cantidad de bloques totales.
+Por otro lado, el merge toma **```O(p log(b))```**, donde p es la cantidad de palabras totales en el índice invertido y b es la cantidad de bloques totales.
 
 ### Cálculo del TF-IDF
 
@@ -53,7 +49,11 @@ Nuevamente, estamos cargando bloque por bloque a memoria principal, y una vez ha
 
 Asimismo, aprovechamos para calcular la norma de cada documento, y lo guardamos en `documents_norm.json`.
 
-Esta operación toma O(nd), donde n es la cantidad de términos distintos del índice invertido, y d es la cantidad máxima de documentos asociados a cada término.
+Esta operación toma **```O(nd)```**, donde n es la cantidad de términos distintos del índice invertido, y d es la cantidad máxima de documentos asociados a cada término.
+
+### Resumen de tiempos de ejecución
+
+En definitiva, la operación más costosa es generar el índice invertido, ya que esta operación toma **```O(n * t^2)```**, donde n es la cantidad de documentos totales y t es la cantidad de términos máxima en todos los documentos, lo cual es asintóticamente mayor que el merge **```O(p log(b))```**, donde p es la cantidad de palabras totales en el índice invertido y b es la cantidad de bloques totales) y el cálculo del TF-IDF **```O(nd)```**, donde n es la cantidad de términos distintos del índice invertido, y d es la cantidad máxima de documentos asociados a cada término.
 
 ## Frontend
 
