@@ -18,6 +18,9 @@ El resultado que se desea obtener es un motor de búsqueda para consultas textua
 
 ## Preprocesamiento
 
+Para preprocesar los tweets, usamos la librería `nltk` de Python. Para cada archivo con tweets, generamos los tokens, removemos los tokens del stoplist y finalmente aplicamos STEMMING para tomar únicamente la raíz de cada palabra.
+
+Una vez se preprocese cada tweet de un archivo, como se detalló en el párrafo anterior, se genera el índice invertido a partir de estos tokens. Nótese que se procesa uno a uno cada archivo de tweets con el objetivo de que no se cargue toda la información directamente a memoria principal.
 
 ## Construcción del Índice 
 
