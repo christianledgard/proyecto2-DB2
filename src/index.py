@@ -29,9 +29,9 @@ class Index:
         self.sorted_blocks_directory = sorted_blocks_directory
         self.total_desired_blocks = total_desired_blocks
 
-        self.total_documents = 0  # 78127
-        self.total_inverted_index_documents = 0  # 1037642
-        self.inverted_index_documents_per_block = 0  # 16213
+        self.total_documents = 0
+        self.total_inverted_index_documents = 0
+        self.inverted_index_documents_per_block = 0
 
         self.file_name_counter = 0
         self.current_block_size = 0
@@ -46,8 +46,7 @@ class Index:
         # hallar norma e tf-idf
         self.calculate_tf_idf(self.sorted_blocks_directory)
 
-    # norma
-    def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
+    def calculate_tf_idf(self, directory):
         # "hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
         # tf-idf = log10(1 + tf) * log10(total_documents / df)
         clean_input_files()
@@ -113,7 +112,7 @@ class Index:
         for id in grupos_de_palabras_con_id:
             for palabra in grupos_de_palabras_con_id[id]:
                 self.hallar_coincidencia_de_la_palabra_en_todos_los_tweets(palabra, id, index_list)
-        return dict(sorted(index_list.items()))
+        return dict(index_list.items())
 
     def exportar_index(self, index, file_name):
         with open(file_name, 'w') as file:
@@ -253,7 +252,7 @@ class Index:
     def update_block_with_remaining_inputs(self, input_blocks, current_input, current_block_size, output, directory,
                                            file_name_counter, total_blocks_to_compare):
         while len(input_blocks) > 0 or len(current_input) > 0:
-            term = current_input.pop(0)  # Cambie de pop_first_item_from_dict a
+            term = current_input.pop(0) 
             self.update_block(term, self.output)
             self.current_block_size += term[1][0]
             last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (
@@ -329,7 +328,6 @@ class Index:
             self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
             current_block = dict()
 
-
 class Query:
     def query(self, words, K):
         blocks_names = os.listdir("sorted_blocks")  # dir is your directory path
@@ -347,7 +345,7 @@ class Query:
         data = []
 
         for key, value in dict(json.load(open("documents_norm.json"))).items():
-            data.append([key, sys.maxsize, value])
+            data.append([key, 0, value])
 
         ids = {}
         for i in range(len(data)):
@@ -358,13 +356,11 @@ class Query:
             if (bs[0] != False):
                 for it in bs[1][1]:
                     index=ids[str(it[0])]
-                    if ((data[index][1]) == sys.maxsize):
-                        data[index][1] = 0
                     data[index][1] += it[2]
 
         for i in range(len(data)):
             data[i][1] = data[i][1] / data[i][2]
-        data = sorted(data, key=itemgetter(1), reverse=False)
+        data = sorted(data, key=itemgetter(1), reverse=True)
         data = data[:int(K)]
 
         clean_directory_files = os.listdir("clean_likeADict")
@@ -378,9 +374,8 @@ class Query:
                 if doc[0] in f:
                     tweets_info[doc[0]] = (f[doc[0]])
                     break
-
-        #for x in tweets_info:
-        #    print(x, end="\n\n\n")
+        
+        print(tweets_info)
         return tweets_info
 
     def search(self, palabra, key_words):
@@ -420,17 +415,9 @@ def is_power(num, base):
         testnum = testnum * base
     return testnum == num
 
-
 def sort_file_names(file_name):
     s = file_name.split('.')
     return int(s[0])
-
-
-def pop_first_item_from_dict(dictionary):
-    term = copy.deepcopy(list(list(dictionary.items())[0]))
-    del dictionary[term[0]]
-    return term
-
 
 def pre_procesamiento(texto):
     """
@@ -460,6 +447,6 @@ def pre_procesamiento(texto):
 
     return tokens_stremed
 
-
-a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
-
+# descomentar esta línea para hallar el índice
+# a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
+Query().query("@juancarloszurek Anular papeles !! Q peligro Sr Zurek !! Cuidado con las combis asesinas libres !!", 10)
