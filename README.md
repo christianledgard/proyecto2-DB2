@@ -37,4 +37,4 @@ En ella se introduce la consulta textual y la cantidad de documentos que el usua
 
 # Pruebas de uso y presentación
 
-Link del vídeo: shorturl.at/uvzFX  
+Link del vídeo: https://drive.google.com/drive/folders/1nxsXNLaz6i0adopcGK6Cm60ZCn4pUPak?usp=sharing
