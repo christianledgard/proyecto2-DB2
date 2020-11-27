@@ -95,6 +95,7 @@ class Query(Q,K):
 El costo de la consulta es  **```N lg N```**, una complejidad en accesos a memoria secundaria y tiempo de ejecución bastante buena.
 
 ### Carga de archivos
+Para realizar la carga de archivos, primero limpiamos los directorios utilizados para dicho procesamiento de índices y almacenamiento tweets. Luego, guardamos los archivos cargados por el usuario al directorio ```clean``` para luego inicializar nuestra clase INDEX con los números de bloques previamente ingresados por el usuario. Finalmente, procesamos la data, y si el proceso fue realizado sin inconvenietes, mostramos un mensaje de éxito. Luego de ello, el usuario podrá realizar las consultas sin inconvenietes sobre la data ya caragada.
 
 
 ## Pruebas de uso y presentación
