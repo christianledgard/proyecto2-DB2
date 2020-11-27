@@ -18,22 +18,24 @@ nltk.download('punkt')
 nltk.download('stopwords')
 stemmer = SnowballStemmer('spanish')
 
+
 class Index:
 
-    def __init__(self, input_directory, index_directory, merge_directory, sorted_blocks_directory, total_desired_blocks):
+    def __init__(self, input_directory, index_directory, merge_directory, sorted_blocks_directory,
+                 total_desired_blocks):
         self.input_directory = input_directory
         self.index_directory = index_directory
         self.merge_directory = merge_directory
         self.sorted_blocks_directory = sorted_blocks_directory
         self.total_desired_blocks = total_desired_blocks
 
-        self.total_documents = 0 # 78127
-        self.total_inverted_index_documents = 0 # 1037642
-        self.inverted_index_documents_per_block = 0 # 16213
+        self.total_documents = 0  # 78127
+        self.total_inverted_index_documents = 0  # 1037642
+        self.inverted_index_documents_per_block = 0  # 16213
 
         self.file_name_counter = 0
         self.current_block_size = 0
-        self.output = dict() # output block
+        self.output = dict()  # output block
 
         # bsbi
         self.bsb_index_construction(input_directory, index_directory)
@@ -42,7 +44,7 @@ class Index:
         self.export_metedata()
 
         # hallar norma e tf-idf
-        self.calculate_tf_idf(self.sorted_blocks_directory) 
+        self.calculate_tf_idf(self.sorted_blocks_directory)
 
     """
     def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
@@ -83,7 +85,7 @@ class Index:
 
     # norma
     def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
-        #"hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
+        # "hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
         # tf-idf = log10(1 + tf) * log10(total_documents / df)
         clean_input_files()
         blocks_names = list(sorted(os.listdir(directory)))
@@ -102,7 +104,7 @@ class Index:
                         tweet.append(tf_idf)
                     else:
                         tweet[2] = tf_idf
-                    
+
                     if str(tweet[0]) not in documents_squared_tf_idf:
                         documents_squared_tf_idf[str(tweet[0])] = math.pow(tf_idf, 2)
                     else:
@@ -124,7 +126,6 @@ class Index:
             for key, value in block.items():
                 block[key]["tf_idf"] = math.sqrt(block[key]["squared_tf_idf"])
             self.exportar_index(block, directory + "/" + block_name)
-
 
     def export_metedata(self):
         result = dict()
@@ -154,7 +155,7 @@ class Index:
                 elemento_de_lista[1] += 1
                 encontrado = True
         if not encontrado:
-            index_list[palabra][1].append([id,1])
+            index_list[palabra][1].append([id, 1])
 
     def generar_index(self, grupos_de_palabras_con_id, index_list):
         for id in grupos_de_palabras_con_id:
@@ -177,7 +178,8 @@ class Index:
                 pre_procesado = pre_procesamiento(item["text"])
                 grupos_de_palabras_con_id[item["id"]] = pre_procesado
                 grupos_de_palabras.append(pre_procesado)
-        return self.generar_index(grupos_de_palabras_con_id, self.dic_palabras_con_terminos_mas_frecuentes(grupos_de_palabras))
+        return self.generar_index(grupos_de_palabras_con_id,
+                                  self.dic_palabras_con_terminos_mas_frecuentes(grupos_de_palabras))
 
     def bsb_index_construction(self, input_directory, output_directory):
         blocks_names = os.listdir(input_directory)
@@ -186,10 +188,10 @@ class Index:
         for block in blocks_names:
             index = self.procesar_index(input_directory + "/" + block)
             self.exportar_index(index, output_directory + "/index-" + block)
-    
+
         self.generate_index_blocks(self.index_directory, self.total_desired_blocks, self.merge_directory)
         self.merge_all_blocks(self.merge_directory, self.sorted_blocks_directory)
-        
+
     def get_file_metadata(self, file_name):
         file = open(file_name)
         file_dict = json.load(file)
@@ -205,9 +207,9 @@ class Index:
         blocks_names = sorted(blocks_names, key=sort_file_names)
         output_file_names = copy.deepcopy(list(blocks_names))
         total_iterations = int(math.log2(len(blocks_names)))
-        
+
         total_blocks_to_compare = 1
-        for i in range(total_iterations): # total iterations to get the result
+        for i in range(total_iterations):  # total iterations to get the result
             blocks_names_copy = copy.deepcopy(list(blocks_names))
 
             if i % 2 == 0:
@@ -219,7 +221,7 @@ class Index:
 
             self.file_name_counter = 0
 
-            while len(blocks_names_copy) > 0: # while there exist copies in the current iteration (L)
+            while len(blocks_names_copy) > 0:  # while there exist copies in the current iteration (L)
                 # get input blocks names
                 input_blocks1 = copy.deepcopy(list(blocks_names_copy[:total_blocks_to_compare]))
                 del blocks_names_copy[:total_blocks_to_compare]
@@ -252,24 +254,33 @@ class Index:
                         input1.pop(0)
                         input2.pop(0)
 
-                    last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (total_blocks_to_compare * 2) == 0
+                    last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (
+                            total_blocks_to_compare * 2) == 0
 
                     if not last_block and self.current_block_size >= self.inverted_index_documents_per_block:
                         self.write_index_and_update_file_counter(self.output, output_directory, self.file_name_counter)
 
                     # check if an input is empty
                     if len(input1) == 0:
-                        if len(input_blocks1) > 0: 
-                            input1 = list(dict(json.load(open(self.input_directory + '/' + input_blocks1.pop(0)))).items()) 
-                        else: break
+                        if len(input_blocks1) > 0:
+                            input1 = list(
+                                dict(json.load(open(self.input_directory + '/' + input_blocks1.pop(0)))).items())
+                        else:
+                            break
                     if len(input2) == 0:
                         if len(input_blocks2) > 0:
-                            input2 = list(dict(json.load(open(self.input_directory + '/' + input_blocks2.pop(0)))).items()) 
-                        else: break
+                            input2 = list(
+                                dict(json.load(open(self.input_directory + '/' + input_blocks2.pop(0)))).items())
+                        else:
+                            break
 
                 # write remaining inputs
-                self.update_block_with_remaining_inputs(input_blocks1, input1, self.current_block_size, self.output, output_directory, self.file_name_counter, total_blocks_to_compare)
-                self.update_block_with_remaining_inputs(input_blocks2, input2, self.current_block_size, self.output, output_directory, self.file_name_counter, total_blocks_to_compare)
+                self.update_block_with_remaining_inputs(input_blocks1, input1, self.current_block_size, self.output,
+                                                        output_directory, self.file_name_counter,
+                                                        total_blocks_to_compare)
+                self.update_block_with_remaining_inputs(input_blocks2, input2, self.current_block_size, self.output,
+                                                        output_directory, self.file_name_counter,
+                                                        total_blocks_to_compare)
 
                 # write last block of current input group
                 self.write_index_and_update_file_counter(self.output, output_directory, self.file_name_counter)
@@ -287,18 +298,22 @@ class Index:
         self.file_name_counter += 1
         self.current_block_size = 0
 
-    def update_block_with_remaining_inputs(self, input_blocks, current_input, current_block_size, output, directory, file_name_counter, total_blocks_to_compare):
+    def update_block_with_remaining_inputs(self, input_blocks, current_input, current_block_size, output, directory,
+                                           file_name_counter, total_blocks_to_compare):
         while len(input_blocks) > 0 or len(current_input) > 0:
-            term = current_input.pop(0) #Cambie de pop_first_item_from_dict a
+            term = current_input.pop(0)  # Cambie de pop_first_item_from_dict a
             self.update_block(term, self.output)
             self.current_block_size += term[1][0]
-            last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (total_blocks_to_compare * 2) == 0
+            last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (
+                    total_blocks_to_compare * 2) == 0
             if not last_block and self.current_block_size >= self.inverted_index_documents_per_block:
                 self.write_index_and_update_file_counter(self.output, directory, self.file_name_counter)
             if len(current_input) == 0:
-                if len(input_blocks) > 0: 
-                    current_input = list(dict(json.load(open(self.input_directory + '/' + input_blocks.pop(0)))).items()) 
-                else: break
+                if len(input_blocks) > 0:
+                    current_input = list(
+                        dict(json.load(open(self.input_directory + '/' + input_blocks.pop(0)))).items())
+                else:
+                    break
 
     def get_total_documents(self):
         return self.total_documents
@@ -326,9 +341,9 @@ class Index:
         for index_file in index_files:
             index_file_dict = self.get_file_metadata(index_directory + "/" + index_file)[0]
             self.total_inverted_index_documents += sum(values[0] for key, values in index_file_dict.items())
-        
+
         self.inverted_index_documents_per_block = self.total_inverted_index_documents // total_desired_blocks
-    
+
         current_block = dict()
         current_index_file = dict(json.load(open(index_directory + "/" + index_files.pop())))
 
@@ -362,13 +377,14 @@ class Index:
             self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
             current_block = dict()
 
+
 class Query:
     def query(self, words, K):
-        blocks_names = os.listdir("sorted_blocks") # dir is your directory path
+        blocks_names = os.listdir("sorted_blocks")  # dir is your directory path
         if blocks_names.count('.DS_Store'):
             blocks_names.remove('.DS_Store')
         blocks_names = sorted(blocks_names, key=sort_file_names)
-        key_words=[]
+        key_words = []
         for block_name in blocks_names:
             block = list(json.load(open("sorted_blocks/" + block_name)))
             key_words.append([block.pop(0), block.pop()])
@@ -379,25 +395,25 @@ class Query:
         data = []
 
         for key, value in dict(json.load(open("documents_norm.json"))).items():
-            data.append([key, sys.maxsize , value])
+            data.append([key, sys.maxsize, value])
 
         ids = {}
         for i in range(len(data)):
             ids[data[i][0]] = i
 
         for word in pre_processed:
-            bs = self.search(word,(key_words)) #Retorna [bool, lista de Documentos que la contienen]
-            if(bs[0]!=False):
-                for it in bs[1]:
-                    if(data[ids[it]][1]== sys.maxsize):
-                        data[ids[it]][1]=0
-                    data[ids[it]][1]+=it[2]
-            
-        for i in range(len(data)):
-            data[i][1]=data[i][1]/data[i][2]
-        data = sorted(data, key=itemgetter(1),reverse=False)
-        data= data[:int(K)]
+            bs = self.search(word, (key_words))  # Retorna [bool, lista de Documentos que la contienen]
+            if (bs[0] != False):
+                for it in bs[1][1]:
+                    index=ids[str(it[0])]
+                    if ((data[index][1]) == sys.maxsize):
+                        data[index][1] = 0
+                    data[index][1] += it[2]
 
+        for i in range(len(data)):
+            data[i][1] = data[i][1] / data[i][2]
+        data = sorted(data, key=itemgetter(1), reverse=False)
+        data = data[:int(K)]
 
         clean_directory_files = os.listdir("clean_likeADict")
         if clean_directory_files.count(".DS_Store"):
@@ -412,39 +428,39 @@ class Query:
                     break
 
         for x in tweets_info:
-            print(x,end="\n\n\n")
+            print(x, end="\n\n\n")
         return tweets_info
 
-
-    def search(self,palabra,key_words):
-        bloque = self.search_bloque(palabra,key_words)
-        if(bloque==None):
+    def search(self, palabra, key_words):
+        bloque = self.search_bloque(palabra, key_words)
+        print(bloque)
+        if (bloque == None):
             return [False] * 2
-        
-        bloque_cargado = list(json.load(open("sorted_blocks/" + str(bloque) + '.json')))
-        #bloque=lista cargada desde json
-        return self.binary_search_block(bloque_cargado,palabra)
 
-    def search_bloque(self, palabra,key_words):
+        bloque_cargado = dict(json.load(open("sorted_blocks/" + str(bloque) + '.json')))
+        # bloque=lista cargada desde json
+        return self.binary_search_block(bloque_cargado, list(bloque_cargado.keys()), palabra)
+
+    def search_bloque(self, palabra, key_words):
         for i in range(len(key_words)):
             if key_words[i][0] <= palabra and key_words[i][1] >= palabra:
                 return i
         return None
 
-    def binary_search_block(self, lista, palabra):
+    def binary_search_block(self, dict, lista, palabra):
         if len(lista) == 1:
-            return [lista[0][0] == palabra, lista[0][1]]
+            return [lista[0] == palabra, dict[lista[0]]]
 
-        middle = len(lista)//2
-        if lista[middle][0] == palabra:
-            return True, lista[middle][1]
-        elif palabra < lista[middle] :
-            return self.binary_search_block(lista[:middle], palabra)
+        middle = len(lista) // 2
+        if lista[middle] == palabra:
+            return True, dict[lista[middle]]
+        elif palabra < lista[middle]:
+            return self.binary_search_block(dict, lista[:middle], palabra)
         else:
-            return self.binary_search_block(lista[middle:], palabra)
+            return self.binary_search_block(dict, lista[middle:], palabra)
 
 
-def is_power (num, base):
+def is_power(num, base):
     if base in {0, 1}:
         return num == base
     testnum = base
@@ -452,9 +468,11 @@ def is_power (num, base):
         testnum = testnum * base
     return testnum == num
 
+
 def sort_file_names(file_name):
     s = file_name.split('.')
     return int(s[0])
+
 
 def pop_first_item_from_dict(dictionary):
     term = copy.deepcopy(list(list(dictionary.items())[0]))
@@ -473,7 +491,8 @@ def pre_procesamiento(texto):
 
     # StopList
     stop_list = stopwords.words("spanish")
-    adicionales = ["«", "»", ".", ",", ";", "(", ")", ":", "@", "RT", "#", "|", "?", "!", "https", "$", "%", "&", "'", "''", "..", "..."]
+    adicionales = ["«", "»", ".", ",", ";", "(", ")", ":", "@", "RT", "#", "|", "?", "!", "https", "$", "%", "&", "'",
+                   "''", "..", "..."]
     stop_list += adicionales
 
     # Remover de la lista los StopList Words
@@ -489,14 +508,14 @@ def pre_procesamiento(texto):
 
     return tokens_stremed
 
-a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 16)
 
-#a.bsb_index_construction("clean", "index")
-#a.merge_blocks("index/")
-#a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
+# a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 16)
+#Query().query("terrorista", 10)
+# a.bsb_index_construction("clean", "index")
+# a.merge_blocks("index/")
+# a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
 
-#a.generate_index_blocks("inverted_index", 64, "merging_blocks")
-#a.merge_all_blocks("merging_blocks")
+# a.generate_index_blocks("inverted_index", 64, "merging_blocks")
+# a.merge_all_blocks("merging_blocks")
 
 # hallar document frequency (# de documentos que contienen a t). trivial, tamaño de índice invertido sobre un término
-# 
