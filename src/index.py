@@ -1,4 +1,3 @@
-# 1) merge
 # 2) hallar la norma no sé cómo
 # 3) weight tf-idf normalizado
 # 4) consulta
@@ -33,9 +32,20 @@ class Index:
         self.inverted_index_documents_per_block = 16213
 
         self.file_name_counter = 0
+        self.current_block_size = 0
+        self.output = dict() # output block
 
         # bsb
         self.bsb_index_construction(input_directory, index_directory)
+
+        # export metadata
+        self.export_metedata()
+    
+    def export_metedata(self):
+        result = dict()
+        result["totalDocuments"] = self.total_documents
+        self.exportar_index(result, "metadata.json")
+
 
     def pre_procesamiento(self, texto):
         """
@@ -134,11 +144,13 @@ class Index:
             blocks_names_copy = copy.deepcopy(list(blocks_names))
 
             if i % 2 == 0:
-                input_directory = merge_directory
+                self.input_directory = merge_directory
                 output_directory = sorted_blocks_directory
             else:
-                input_directory = sorted_blocks_directory
+                self.input_directory = sorted_blocks_directory
                 output_directory = merge_directory
+
+            self.file_name_counter = 0
 
             while len(blocks_names_copy) > 0: # while there exist copies in the current iteration (L)
                 # get input blocks names
@@ -146,57 +158,54 @@ class Index:
                 del blocks_names_copy[:total_blocks_to_compare]
                 input_blocks2 = copy.deepcopy(list(blocks_names_copy[:total_blocks_to_compare]))
                 del blocks_names_copy[:total_blocks_to_compare]
-                # declare output block
-                output = dict()
-                current_block_size = 0
+                # declare self.output block
+                self.output = dict()
+                self.current_block_size = 0
                 # declare input blocks
-                input1 = list(dict(json.load(open(input_directory + '/' + input_blocks1.pop(0)))).items())
-                input2 = list(dict(json.load(open(input_directory + '/' + input_blocks2.pop(0)))).items())
+                input1 = list(dict(json.load(open(self.input_directory + '/' + input_blocks1.pop(0)))).items())
+                input2 = list(dict(json.load(open(self.input_directory + '/' + input_blocks2.pop(0)))).items())
 
-                self.file_name_counter = 0
-
-                #input1_sum = sum(values[0] for key, values in input1.items())
-                #input2_sum = sum(values[0] for key, values in input2.items())
-                
                 while True:
-                    #term1 = pop_first_item_from_dict(input1)
-                    #term2 = pop_first_item_from_dict(input2)
+
                     term1 = input1[0]
                     term2 = input2[0]
 
                     if term1[0] < term2[0]:
-                        current_block_size += term1[1][0]
-                        self.update_block(term1, output)
+                        self.current_block_size += term1[1][0]
+                        self.update_block(term1, self.output)
                         input1.pop(0)
                     elif term1[0] > term2[0]:
-                        current_block_size += term2[1][0]
-                        self.update_block(term2, output)
+                        self.current_block_size += term2[1][0]
+                        self.update_block(term2, self.output)
                         input2.pop(0)
                     else:
-                        current_block_size += (term1[1][0] + term2[1][0])
-                        self.update_block(term1, output)
-                        self.update_block(term2, output)
+                        self.current_block_size += (term1[1][0] + term2[1][0])
+                        self.update_block(term1, self.output)
+                        self.update_block(term2, self.output)
                         input1.pop(0)
                         input2.pop(0)
 
                     last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (total_blocks_to_compare * 2) == 0
 
-                    if not last_block and current_block_size >= self.inverted_index_documents_per_block:
-                        self.write_index_and_update_file_counter(output, output_directory, self.file_name_counter)
-                        current_block_size = 0
+                    if not last_block and self.current_block_size >= self.inverted_index_documents_per_block:
+                        self.write_index_and_update_file_counter(self.output, output_directory, self.file_name_counter)
 
                     # check if an input is empty
-                    if not self.check_and_update_inputs(input1, input_blocks1) or not self.check_and_update_inputs(input2, input_blocks2):
-                        output_sum = sum(values[0] for key, values in output.items())
-                        p = 0
-                        break
+                    if len(input1) == 0:
+                        if len(input_blocks1) > 0: 
+                            input1 = list(dict(json.load(open(self.input_directory + '/' + input_blocks1.pop(0)))).items()) 
+                        else: break
+                    if len(input2) == 0:
+                        if len(input_blocks2) > 0:
+                            input2 = list(dict(json.load(open(self.input_directory + '/' + input_blocks2.pop(0)))).items()) 
+                        else: break
 
                 # write remaining inputs
-                self.update_block_with_remaining_inputs(input_blocks1, input1, current_block_size, output, output_directory, self.file_name_counter, total_blocks_to_compare)
-                self.update_block_with_remaining_inputs(input_blocks2, input2, current_block_size, output, output_directory, self.file_name_counter, total_blocks_to_compare)
+                self.update_block_with_remaining_inputs(input_blocks1, input1, self.current_block_size, self.output, output_directory, self.file_name_counter, total_blocks_to_compare)
+                self.update_block_with_remaining_inputs(input_blocks2, input2, self.current_block_size, self.output, output_directory, self.file_name_counter, total_blocks_to_compare)
 
                 # write last block of current input group
-                self.write_index_and_update_file_counter(output, output_directory, self.file_name_counter)
+                self.write_index_and_update_file_counter(self.output, output_directory, self.file_name_counter)
 
             total_blocks_to_compare *= 2
 
@@ -204,31 +213,25 @@ class Index:
             for block_name in blocks_names:
                 block = dict(json.load(open(merge_directory + '/' + block_name)))
                 self.exportar_index(block, sorted_blocks_directory + '/' + block_name)
-        # done
 
     def write_index_and_update_file_counter(self, output, output_directory, file_name_counter):
-        self.exportar_index(output, output_directory + "/" + str(self.file_name_counter) + '.json')
-        output = dict()
+        self.exportar_index(self.output, output_directory + "/" + str(self.file_name_counter) + '.json')
+        self.output = dict()
         self.file_name_counter += 1
-
-    def check_and_update_inputs(self, current_input, input_blocks):
-        if len(current_input) == 0:
-            if len(input_blocks) > 0:
-                current_input = input_blocks.pop(0)
-            else:
-                return False
-        return True
+        self.current_block_size = 0
 
     def update_block_with_remaining_inputs(self, input_blocks, current_input, current_block_size, output, directory, file_name_counter, total_blocks_to_compare):
         while len(input_blocks) > 0 or len(current_input) > 0:
             term = current_input.pop(0) #Cambie de pop_first_item_from_dict a
-            self.update_block(term, output)
-            current_block_size += term[1][0]
+            self.update_block(term, self.output)
+            self.current_block_size += term[1][0]
             last_block = self.file_name_counter > 0 and (self.file_name_counter + 1) % (total_blocks_to_compare * 2) == 0
-            if not last_block and current_block_size >= self.inverted_index_documents_per_block:
-                self.write_index_and_update_file_counter(output, directory, self.file_name_counter)
-            if not self.check_and_update_inputs(current_input, input_blocks):
-                break
+            if not last_block and self.current_block_size >= self.inverted_index_documents_per_block:
+                self.write_index_and_update_file_counter(self.output, directory, self.file_name_counter)
+            if len(current_input) == 0:
+                if len(input_blocks) > 0: 
+                    current_input = list(dict(json.load(open(self.input_directory + '/' + input_blocks.pop(0)))).items()) 
+                else: break
 
     def get_total_documents(self):
         return self.total_documents
@@ -293,8 +296,49 @@ class Index:
             current_block = dict()
 
 class Query:
-    def search(words,N):
-        print("Test")
+    def search(words,K):
+
+        ### n = leer n            
+        ### leer lenght e ids
+
+        data=[]
+        ids={}
+
+
+def binarySearch(blocks, target):
+  min = 0
+  max = len(lst)-1
+  avg = (min+max)/2
+  # uncomment next line for traces
+  # print lst, target, avg  
+  while (min < max):
+    if (lst[avg] == target):
+      return avg
+    elif (lst[avg] < target):
+      return avg + 1 + search(lst[avg+1:], target)
+    else:
+      return search(lst[:avg], target)
+
+
+
+        for each block in blocks:
+            for each word in block:
+                for each document in word:
+                    if()
+
+        for word in words:
+            print("")
+
+        
+
+        for i in range(len(data)):
+            data[i][1]=data[i][1]/data[i][2]
+
+
+
+        sorted(data, key=itemgetter(1))
+        return data[0:K]
+
 
 def is_power (num, base):
     if base in {0, 1}:
@@ -314,8 +358,6 @@ def pop_first_item_from_dict(dictionary):
     return term
 
 a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
-
-
 
 
 #a.bsb_index_construction("clean", "index")
