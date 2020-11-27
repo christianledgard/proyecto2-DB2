@@ -54,3 +54,10 @@ function buscar(){
         }
     });
 }
+
+$("#loading").hide();
+
+function loading(){
+    $("#loading").show();
+    $("#uploader").hide();       
+}
