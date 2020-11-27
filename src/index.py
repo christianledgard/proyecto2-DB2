@@ -79,17 +79,6 @@ class Index:
             documents_squared_tf_idf[key] = math.sqrt(value)
         self.exportar_index(documents_squared_tf_idf, "documents_norm.json")
 
-    def calculate_sqrt_tf_idf(self, directory):
-        blocks_names = list(sorted(os.listdir(directory)))
-        if blocks_names.count('.DS_Store'):
-            blocks_names.remove('.DS_Store')
-        blocks_names = sorted(blocks_names, key=sort_file_names)
-        for block_name in blocks_names:
-            block = dict(json.load(open(directory + "/" + block_name)))
-            for key, value in block.items():
-                block[key]["tf_idf"] = math.sqrt(block[key]["squared_tf_idf"])
-            self.exportar_index(block, directory + "/" + block_name)
-
     def export_metedata(self):
         result = dict()
         result["totalDocuments"] = self.total_documents
