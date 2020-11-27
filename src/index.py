@@ -46,43 +46,6 @@ class Index:
         # hallar norma e tf-idf
         self.calculate_tf_idf(self.sorted_blocks_directory)
 
-    """
-    def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
-        #"hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
-        # tf-idf = log10(1 + tf) * log10(total_documents / df)
-        clean_input_files()
-        blocks_names = list(sorted(os.listdir(directory)))
-        if blocks_names.count('.DS_Store'):
-            blocks_names.remove('.DS_Store')
-        blocks_names = sorted(blocks_names, key=sort_file_names)
-        for block_name in blocks_names:
-            block = dict(json.load(open(directory + "/" + block_name)))
-            for key, value in block.items():
-                idf = math.log10(self.total_documents / int(value[0]))
-                for tweet in value[1]:
-                    tf = math.log10(1 + tweet[1])
-                    tf_idf = tf * idf
-                    if len(tweet) <= 2:
-                        tweet.append(tf_idf)
-                    else:
-                        tweet[2] = tf_idf
-                    
-                    documents_blocks_names = list(sorted(os.listdir(clean_directory)))
-                    if documents_blocks_names.count('.DS_Store'):
-                        documents_blocks_names.remove('.DS_Store')
-                    for documents_block_name in documents_blocks_names:
-                        document_block = dict(json.load(open(clean_directory + "/" + documents_block_name)))
-                        if str(tweet[0]) in document_block:
-                            if "squared_tf_idf" not in document_block[str(tweet[0])]:
-                                document_block[str(tweet[0])]["squared_tf_idf"] = math.pow(tf_idf, 2)
-                            else:
-                                document_block[str(tweet[0])]["squared_tf_idf"] += math.pow(tf_idf, 2)
-                            self.exportar_index(document_block, clean_directory + "/" + documents_block_name)
-                            break
-
-            self.exportar_index(block, directory + "/" + block_name)
-            """
-
     # norma
     def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
         # "hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
@@ -115,17 +78,6 @@ class Index:
         for key, value in documents_squared_tf_idf.items():
             documents_squared_tf_idf[key] = math.sqrt(value)
         self.exportar_index(documents_squared_tf_idf, "documents_norm.json")
-
-    def calculate_sqrt_tf_idf(self, directory):
-        blocks_names = list(sorted(os.listdir(directory)))
-        if blocks_names.count('.DS_Store'):
-            blocks_names.remove('.DS_Store')
-        blocks_names = sorted(blocks_names, key=sort_file_names)
-        for block_name in blocks_names:
-            block = dict(json.load(open(directory + "/" + block_name)))
-            for key, value in block.items():
-                block[key]["tf_idf"] = math.sqrt(block[key]["squared_tf_idf"])
-            self.exportar_index(block, directory + "/" + block_name)
 
     def export_metedata(self):
         result = dict()
@@ -509,13 +461,5 @@ def pre_procesamiento(texto):
     return tokens_stremed
 
 
-a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 16)
-#Query().query("terrorista", 10)
-# a.bsb_index_construction("clean", "index")
-# a.merge_blocks("index/")
-# a.merge_blocks_2("index/index-tweets_2018-08-07.json","index/index-tweets_2018-08-08.json","index/mergedTest.json", "index/mergedTest2.json")
+a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
 
-# a.generate_index_blocks("inverted_index", 64, "merging_blocks")
-# a.merge_all_blocks("merging_blocks")
-
-# hallar document frequency (# de documentos que contienen a t). trivial, tamaño de índice invertido sobre un término
