@@ -1,18 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, Response
+from flask import Flask, render_template, request, redirect, url_for, Response, flash
 import json
 import importlib
 import sys
 import os 
 import glob
 from index import Query
+import index
+import time
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append("../merging_blocks/0.json")
-import index
 
 app = Flask(__name__,
             static_url_path='', 
             static_folder='frontEnd/static',
             template_folder='frontEnd/templates')
+app.secret_key = b'heiderEsLoMaximo/'
 
 @app.route('/')
 def home():
@@ -24,7 +27,6 @@ def consulta():
    words =  message['values']
    cantidad = message['cantidad']
    data = Query().query(words,cantidad)
-   print(data)
    response = Response(
         response=json.dumps(data),
         status=200,
@@ -46,6 +48,8 @@ def upload():
          archivo.write(file.read())
    
    index.Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", int(numero_bloques))
+   
+   flash(u'Los datos se han cargado de manera correcta.',  'alert-success')
    return render_template('buscador.html')
 
 if __name__ == '__main__':

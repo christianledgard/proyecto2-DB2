@@ -4,9 +4,19 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='cardStyle.css') }}">
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class=flashes>
+    {% for category, message in messages %}
+      <div class="alert {{ category }}" role="alert">{{ message }}</div>
+    {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <main class="flex-shrink-0">
-    <div class="container">
+    <div id="loading" class="loader">Loading...</div>
+    <div class="container" id="uploader">
         <h1 class="mt-5">Agregar Tweets</h1>
         <p class="lead">Suba su archivos en formato JSON a continuación: </p>
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
@@ -21,7 +31,7 @@
                 </select>
                 <div id="x" class="form-text mb-4">Seleccione el número de bloques.</div>
             <div>
-                <button  class="btn btn-primary">Agregar</button>
+                <button  class="btn btn-primary" onclick="loading();">Agregar</button>
             </div>
         </form>
     </div>
