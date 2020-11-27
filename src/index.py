@@ -10,6 +10,7 @@ from nltk.corpus import stopwords
 import json
 import math
 import os
+import sys
 import copy
 from cleanFilesToDic import clean_input_files
 
@@ -42,7 +43,7 @@ class Index:
 
         # hallar norma e tf-idf
         self.calculate_tf_idf(self.sorted_blocks_directory) 
-    
+
     """
     def calculate_tf_idf(self, directory, clean_directory="clean_likeADict"):
         #"hagamosl": [df: 2, [[1038525060129148928, tf: 1, tf-idf], [1038525060129148928, tf: 1, tf-idf]]]
@@ -111,7 +112,7 @@ class Index:
 
         for key, value in documents_squared_tf_idf.items():
             documents_squared_tf_idf[key] = math.sqrt(value)
-        self.exportar_index(documents_squared_tf_idf, "documents_tf_idf_squared.json")
+        self.exportar_index(documents_squared_tf_idf, "documents_norm.json")
 
     def calculate_sqrt_tf_idf(self, directory):
         blocks_names = list(sorted(os.listdir(directory)))
@@ -129,33 +130,6 @@ class Index:
         result = dict()
         result["totalDocuments"] = self.total_documents
         self.exportar_index(result, "metadata.json")
-
-    def pre_procesamiento(self, texto):
-        """
-        pre procesar text usando la librería nltk
-
-        :param texto: archivo de texto a procesar
-        """
-        # Generar Tokens
-        tokens = nltk.word_tokenize(texto)
-
-        # StopList
-        stop_list = stopwords.words("spanish")
-        adicionales = ["«", "»", ".", ",", ";", "(", ")", ":", "@", "RT", "#", "|", "?", "!", "https", "$", "%", "&", "'", "''", "..", "..."]
-        stop_list += adicionales
-
-        # Remover de la lista los StopList Words
-        tokens_clean = tokens.copy()
-        for token in tokens:
-            if token in stop_list:
-                tokens_clean.remove(token)
-
-        # Remplazar la palabra por su raíz (STEMMING)
-        tokens_stremed = list()
-        for token in tokens_clean:
-            tokens_stremed.append(stemmer.stem(token))
-
-        return tokens_stremed
 
     def dic_palabras_con_terminos_mas_frecuentes(self, lista):
         """
@@ -200,7 +174,7 @@ class Index:
             data = json.load(arrayOfJsons)
             self.total_documents += len(data)
             for item in data:
-                pre_procesado = self.pre_procesamiento(item["text"])
+                pre_procesado = pre_procesamiento(item["text"])
                 grupos_de_palabras_con_id[item["id"]] = pre_procesado
                 grupos_de_palabras.append(pre_procesado)
         return self.generar_index(grupos_de_palabras_con_id, self.dic_palabras_con_terminos_mas_frecuentes(grupos_de_palabras))
@@ -388,67 +362,86 @@ class Index:
             self.exportar_index(dict(sorted(current_block.items())), merge_directory + "/" + str(i) + '.json')
             current_block = dict()
 
-# class Query:
-    def search(words,K):
+class Query:
+    def query(self, words, K):
+        blocks_names = os.listdir("sorted_blocks") # dir is your directory path
+        if blocks_names.count('.DS_Store'):
+            blocks_names.remove('.DS_Store')
+        blocks_names = sorted(blocks_names, key=sort_file_names)
+        key_words=[]
+        for block_name in blocks_names:
+            block = list(json.load(open("sorted_blocks/" + block_name)))
+            key_words.append([block.pop(0), block.pop()])
 
-        ### n = leer n            
-        ### leer lenght e ids
+        pre_processed = pre_procesamiento(words)
 
-        data=[]
-        ids={}
-        # for word in data:
-        #     bs= binarySearch()
-        #     if()
-        #     for each word in block:
-        #         for each document in word:
-        #             if()
+        N = dict(json.load(open("metadata.json")))["totalDocuments"]
+        data = []
 
-        # for word in words:
-        #     print("")
+        for key, value in dict(json.load(open("documents_norm.json"))).items():
+            data.append([key, sys.maxsize , value])
 
+        ids = {}
+        for i in range(len(data)):
+            ids[data[i][0]] = i
+
+        for word in pre_processed:
+            bs = self.search(word,(key_words)) #Retorna [bool, lista de Documentos que la contienen]
+            if(bs[0]!=False):
+                for it in bs[1]:
+                    if(data[ids[it]][1]== sys.maxsize):
+                        data[ids[it]][1]=0
+                    data[ids[it]][1]+=it[2]
+            
+        for i in range(len(data)):
+            data[i][1]=data[i][1]/data[i][2]
+        data = sorted(data, key=itemgetter(1),reverse=False)
+        data= data[:int(K)]
+
+
+        clean_directory_files = os.listdir("clean_likeADict")
+        if clean_directory_files.count(".DS_Store"):
+            clean_directory_files.remove(".DS_Store")
+
+        tweets_info = []
+        for doc in data:
+            for filename in clean_directory_files:
+                f = dict(json.load(open("clean_likeADict/" + filename)))
+                if doc[0] in f:
+                    tweets_info.append(f[doc[0]]['body'])
+                    break
+
+        for x in tweets_info:
+            print(x,end="\n\n\n")
+        return tweets_info
+
+
+    def search(self,palabra,key_words):
+        bloque = self.search_bloque(palabra,key_words)
+        if(bloque==None):
+            return [False] * 2
         
+        bloque_cargado = list(json.load(open("sorted_blocks/" + str(bloque) + '.json')))
+        #bloque=lista cargada desde json
+        return self.binary_search_block(bloque_cargado,palabra)
 
-        # for i in range(len(data)):
-        #     data[i][1]=data[i][1]/data[i][2]
+    def search_bloque(self, palabra,key_words):
+        for i in range(len(key_words)):
+            if key_words[i][0] <= palabra and key_words[i][1] >= palabra:
+                return i
+        return None
 
+    def binary_search_block(self, lista, palabra):
+        if len(lista) == 1:
+            return [lista[0][0] == palabra, lista[0][1]]
 
-
-        # sorted(data, key=itemgetter(1))
-        return data[0:K]
-
-
-
-# def binary_search(lista, e, n_iter):
-#       if len(lista) == 1:
-#     return lista[0] == e, n_iter+1
-
-#   middle = len(lista)//2
-#   if lista[middle] == e:
-#     return middle, n_iter+1
-#   elif e < lista[middle] :
-#     return binary_search(lista[:middle], e, n_iter+1)
-#   else:
-#     return binary_search(lista[middle:], e, n_iter+1)
-
-
-
-
-# def binarySearch(blocks, target):
-#   min = 0
-#   max = len(lst)-1
-#   avg = (min+max)/2
-#   # uncomment next line for traces
-#   # print lst, target, avg  
-#   while (min < max):
-#     if (lst[avg] == target):
-#       return avg
-#     elif (lst[avg] < target):
-#       return avg + 1 + search(lst[avg+1:], target)
-#     else:
-#       return search(lst[:avg], target)
-
-
-
+        middle = len(lista)//2
+        if lista[middle][0] == palabra:
+            return True, lista[middle][1]
+        elif palabra < lista[middle] :
+            return self.binary_search_block(lista[:middle], palabra)
+        else:
+            return self.binary_search_block(lista[middle:], palabra)
 
 
 def is_power (num, base):
@@ -468,8 +461,35 @@ def pop_first_item_from_dict(dictionary):
     del dictionary[term[0]]
     return term
 
-a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 16)
 
+def pre_procesamiento(texto):
+    """
+    pre procesar text usando la librería nltk
+
+    :param texto: archivo de texto a procesar
+    """
+    # Generar Tokens
+    tokens = nltk.word_tokenize(texto)
+
+    # StopList
+    stop_list = stopwords.words("spanish")
+    adicionales = ["«", "»", ".", ",", ";", "(", ")", ":", "@", "RT", "#", "|", "?", "!", "https", "$", "%", "&", "'", "''", "..", "..."]
+    stop_list += adicionales
+
+    # Remover de la lista los StopList Words
+    tokens_clean = tokens.copy()
+    for token in tokens:
+        if token in stop_list:
+            tokens_clean.remove(token)
+
+    # Remplazar la palabra por su raíz (STEMMING)
+    tokens_stremed = list()
+    for token in tokens_clean:
+        tokens_stremed.append(stemmer.stem(token))
+
+    return tokens_stremed
+
+a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 16)
 
 #a.bsb_index_construction("clean", "index")
 #a.merge_blocks("index/")
