@@ -3,6 +3,7 @@ import json
 import importlib
 import sys
 import os 
+import glob
 from index import Query
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append("../merging_blocks/0.json")
@@ -34,10 +35,17 @@ def consulta():
 @app.route('/upload', methods = ['POST'])
 def upload():
    uploaded_files = request.files.getlist("file")
+   numero_bloques = request.form.get("numeroBloques")
+   
+   files = glob.glob('clean/*') + glob.glob('clean_likeADict/*') + glob.glob('inverted_index/*') + glob.glob('merging_blocks/*') + glob.glob('sorted_blocks/*')
+   for f in files:
+      os.remove(f)
 
    for file in uploaded_files:
       with open("clean/"+str(file.filename), "wb") as archivo:
          archivo.write(file.read())
+   
+   index.Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", int(numero_bloques))
    return render_template('buscador.html')
 
 if __name__ == '__main__':
