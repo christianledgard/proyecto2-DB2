@@ -1,0 +1,53 @@
+a {
+text-decoration: none;
+color: #1DA1F2;
+}
+
+a:hover {
+text-decoration: underline;
+}
+
+.card {
+padding: 0;
+margin: 0;
+box-sizing: border-box;
+width: 60vh;
+padding: 1em;
+border: 1px solid #eee;
+}
+
+.card__header {
+display: flex;
+align-items: center;
+}
+
+.card__avatar {
+width: 45px;
+height: 45px;
+border-radius: 50%;
+}
+
+.card__name {
+    color: #555;
+    font-size: 1em;
+}
+
+.card__text {
+    margin: 0.4em 0;
+}
+
+.card__paragraph {
+    margin-bottom: 1em;
+}
+.card__date {
+    color: #555;
+}
+
+.card__footer {
+    border-top: 1px solid #eee;
+    padding: 1em 0;
+    color: #bbb;
+    
+    display: flex;
+    justify-content: space-around;
+}

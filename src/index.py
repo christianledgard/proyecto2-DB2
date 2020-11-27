@@ -382,16 +382,16 @@ class Query:
         if clean_directory_files.count(".DS_Store"):
             clean_directory_files.remove(".DS_Store")
 
-        tweets_info = []
+        tweets_info = dict()
         for doc in data:
             for filename in clean_directory_files:
                 f = dict(json.load(open("clean_likeADict/" + filename)))
                 if doc[0] in f:
-                    tweets_info.append(f[doc[0]]['body'])
+                    tweets_info[doc[0]] = (f[doc[0]])
                     break
 
-        for x in tweets_info:
-            print(x, end="\n\n\n")
+        #for x in tweets_info:
+        #    print(x, end="\n\n\n")
         return tweets_info
 
     def search(self, palabra, key_words):
@@ -473,3 +473,4 @@ def pre_procesamiento(texto):
 
 
 a = Index("clean", "inverted_index", "merging_blocks", "sorted_blocks", 64)
+

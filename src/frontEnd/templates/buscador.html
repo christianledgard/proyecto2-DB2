@@ -1,20 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-<script src="https://cdn3.devexpress.com/jslib/19.1.3/js/dx.all.js"></script>
-<script src="https://unpkg.com/devextreme-aspnet-data@2.2.1/js/dx.aspnet.data.js"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='cardStyle.css') }}">
 
 
 <main class="flex-shrink-0">
     <div class="container">
-        <h1 class="mt-5">Agregar Tweet</h1>
-        <p class="lead">Suba su archivo en formato JSON a continuación: </p>
+        <h1 class="mt-5">Agregar Tweets</h1>
+        <p class="lead">Suba su archivos en formato JSON a continuación: </p>
         <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
             <div>
                 <input type="file" class="form-control-file mb-4 mt-2" id="file" accept="application/json" name="file" multiple>
             </div>
+            <select class="form-control" id="numeroBloques" name="numeroBloques">
+                    <option>8</option>
+                    <option>16</option>
+                    <option>32</option>
+                    <option>64</option>
+                </select>
+                <div id="x" class="form-text mb-4">Seleccione el número de bloques.</div>
             <div>
                 <button  class="btn btn-primary">Agregar</button>
             </div>
@@ -32,8 +37,8 @@
         <div class="mb-3">
             <div class="form-group">
                 <select class="form-control" id="numElement" name="numElement">
-                    <option>1</option>
                     <option>10</option>
+                    <option>1</option>
                     <option>25</option>
                     <option>50</option>
                 </select>
@@ -43,38 +48,13 @@
         <button type="button" onClick="buscar()" class="btn btn-primary">Buscar</button>
         </form>
     </div>
+
+    <div class="container">
+        <div id="titulo"></div>
+        <div id="resultados"></div>
+    </div>
 </main>
 
-<script>
-
-    function buscar(){
-        var cantidad = $('#numElement').val();
-    
-        var str = $('#searchString').val();
-        var res = str;
-    
-        var message = JSON.stringify({
-                "values": res,
-                "cantidad": cantidad
-            });
-    
-        $.ajax({
-            url:'/consulta',
-            type:'POST',
-            contentType: 'application/json',
-            data : message,
-            dataType:'json',
-            success: function(response){
-                },
-            error: function(response){
-                if(response['status']==401){
-                    }
-                 else{
-                  }}
-        });
-    }
-    
-    </script>
-
+<script type="text/javascript" src="{{ url_for('static', filename='search.js') }}"></script>
 
 {% endblock %}
